@@ -235,7 +235,7 @@ async function renderOccupazione(params) {
     : occupazioni.map(function(o) {
         return '<tr>'
           + '<td>'
-          + '<strong>' + (o.ditta.intestazione || '-') + '</strong>'
+          + '<strong>' + (o.ditta.intestazione || o.ditta.ragioneSociale || '-') + '</strong>'
           + '<br>' + (o.ditta.ragioneSociale || '')
           + '<br><small class="text-muted">P.IVA: ' + (o.ditta.partitaIva || '') + '</small>'
           + '</td>'
@@ -626,11 +626,12 @@ async function renderRiepilogo(params) {
     + '<option value="Grigia"' + selTar('Grigia') + '>Grigia</option>'
     + '<option value="Rossa Ann"' + selTar('Rossa Ann') + '>Rossa Annuale</option>'
     + '</select></div>'
-    + '<div class="col-12 mt-2">'
+    + '</div>'
+    + '<div class="mt-3">'
     + '<button class="btn btn-primary px-4" onclick="applicaFiltriRiepilogo(' + anno + ')">'
     + '<i class="bi bi-search me-1"></i>Filtra</button>'
     + '</div>'
-    + '</div></div></div>'
+    + '</div></div>'
     + '<div class="card"><div class="card-body p-0"><div class="table-responsive">'
     + '<table class="table table-hover mb-0">'
     + '<thead class="table-light"><tr>'
