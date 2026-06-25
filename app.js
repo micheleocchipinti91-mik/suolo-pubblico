@@ -12,8 +12,9 @@ const ROUTES = {
 };
 
 function navigate(path, params = {}) {
-  const url = params.anno ? `${path}?anno=${params.anno}` : path;
-  history.pushState({ path, params }, '', url);
+  // GitHub Pages non ha server-side routing: usiamo ?_route= come parametro
+  const qs = new URLSearchParams({ _route: path, ...params }).toString();
+  history.pushState({ path, params }, '', `?${qs}`);
   renderView(path, params);
 }
 
@@ -162,10 +163,13 @@ window.updateTariffazione = function(select, prefix) {
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 
-async function renderDashboard() {
-  const occupazioni = await DB.getOccupazioniByAnno(ANNO_CORRENTE);
-  const totaleStalli    = occupazioni.reduce((s, o) => s + (o.stalli.numero || 0), 0);
-  const stalliAnnuali   = occupazioni.filter(o => o.periodo.annuale).reduce((s, o) => s + (o.stalli.numero || 0), 0);
+async function renderDashboard({ anno } = {}) {
+  const anni = await getAnniConCorrente();
+  anno = parseInt(anno || ANNO_CORRENTE);
+
+  const occupazioni = await DB.getOccupazioniByAnno(anno);
+  const totaleStalli     = occupazioni.reduce((s, o) => s + (o.stalli.numero || 0), 0);
+  const stalliAnnuali    = occupazioni.filter(o => o.periodo.annuale).reduce((s, o) => s + (o.stalli.numero || 0), 0);
   const stalliStagionali = occupazioni.filter(o => o.periodo.stagionale).reduce((s, o) => s + (o.stalli.numero || 0), 0);
   const pagati    = occupazioni.filter(o => o.pagamento.stato === 'pagato').length;
   const parziali  = occupazioni.filter(o => o.pagamento.stato === 'parziale').length;
@@ -174,7 +178,13 @@ async function renderDashboard() {
   main().innerHTML = `
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="mb-0">Dashboard</h2>
-      <span class="badge bg-primary fs-5">Anno ${ANNO_CORRENTE}</span>
+      <div class="d-flex align-items-center gap-3">
+        <label class="mb-0 fw-semibold">Anno:</label>
+        <select class="form-select form-select-sm" style="width:120px;"
+                onchange="navigate('/', {anno: this.value})">
+          ${annoSelectHTML(anni, anno)}
+        </select>
+      </div>
     </div>
     <div class="row g-4 mb-4">
       <div class="col-md-4">
@@ -865,30 +875,6 @@ window.importaDati = async function(file) {
   }
 };
 
-// ─── SIDEBAR MOBILE ───────────────────────────────────────────────────────────
-
-function setupSidebar() {
-  const btn = el('sidebarToggle');
-  const sidebar = el('sidebar');
-  const overlay = el('sidebar-overlay');
-  if (!btn || !sidebar) return;
-  btn.addEventListener('click', () => {
-    sidebar.classList.toggle('show');
-    if (overlay) overlay.classList.toggle('show');
-  });
-  if (overlay) overlay.addEventListener('click', () => {
-    sidebar.classList.remove('show');
-    overlay.classList.remove('show');
-  });
-  // Chiudi sidebar al clic di un link
-  sidebar.querySelectorAll('.nav-link').forEach(a => {
-    a.addEventListener('click', () => {
-      sidebar.classList.remove('show');
-      if (overlay) overlay.classList.remove('show');
-    });
-  });
-}
-
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -896,9 +882,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(console.error);
   }
-
-  // Sidebar mobile
-  setupSidebar();
 
   // Import file handler
   const importInput = el('importFileInput');
@@ -910,10 +893,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Routing iniziale
-  const path = window.location.pathname.replace(/\/index\.html$/, '') || '/';
+  // Su GitHub Pages il pathname è tipo /repo-name/ oppure /repo-name/index.html
+  // Estraiamo solo la parte di "vista" (/, /occupazione, ecc.) dai params se presenti
   const params = Object.fromEntries(new URLSearchParams(window.location.search));
-  history.replaceState({ path, params }, '', window.location.href);
-  renderView(path, params);
+  const routePath = params._route || '/';
+  delete params._route;
+  renderView(routePath, params);
 });
 
 window.navigate = navigate;
