@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+  <!-- PWA / iPad -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Suolo Pubblico">
+  <meta name="theme-color" content="#1a365d">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="logo.png">
+
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <title>Gestione Suolo Pubblico - ATM Spa</title>
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#" onclick="navigate('/'); return false;">
+        <img src="logo.png" alt="ATM Spa" width="40" height="40">
+        <span>Gestione Suolo Pubblico - ATM Spa</span>
+      </a>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <!-- Backup / Ripristino -->
+        <div class="dropdown">
+          <button class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <span class="ms-1">Dati</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#" onclick="esportaDati(); return false;">
+              <i class="bi bi-download me-2"></i>Esporta backup JSON
+            </a></li>
+            <li><a class="dropdown-item" href="#" onclick="document.getElementById('importFileInput').click(); return false;">
+              <i class="bi bi-upload me-2"></i>Importa backup JSON
+            </a></li>
+          </ul>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;">
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── LAYOUT (identico all'app Windows: sidebar fissa a sinistra) ── -->
+  <div class="container-fluid">
+    <div class="row">
+
+      <!-- SIDEBAR — sempre visibile, nessun hamburger -->
+      <nav id="sidebar" class="col-3 col-lg-2 py-3">
+        <div class="nav flex-column">
+          <a class="nav-link" href="#" data-route="/" onclick="navigate('/'); return false;">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          </a>
+          <a class="nav-link" href="#" data-route="/occupazione" onclick="navigate('/occupazione'); return false;">
+            <i class="bi bi-calendar3 me-2"></i>Occupazione Suolo
+          </a>
+          <a class="nav-link" href="#" data-route="/riepilogo" onclick="navigate('/riepilogo'); return false;">
+            <i class="bi bi-table me-2"></i>Riepilogo
+          </a>
+          <a class="nav-link" href="#" data-route="/anagrafica" onclick="navigate('/anagrafica'); return false;">
+            <i class="bi bi-building me-2"></i>Anagrafica
+          </a>
+        </div>
+      </nav>
+
+      <!-- CONTENUTO PRINCIPALE -->
+      <main id="main-content" class="col-9 col-lg-10 px-4 py-4">
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border" role="status"></div>
+          <p class="mt-3">Caricamento...</p>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Banner installa PWA (solo Safari iOS se non già installata) -->
+  <div id="install-banner">
+    <i class="bi bi-share me-2"></i>
+    Per installare: tocca <strong>Condividi</strong> → <strong>Aggiungi a schermata Home</strong>
+    <button class="btn btn-sm btn-link text-white ms-2"
+            onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <script src="db.js"></script>
+  <script src="pdf.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    // Mostra banner solo su Safari iOS/iPadOS non installato come PWA
+    window.addEventListener('load', () => {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone === true;
+      if (isIOS && !isStandalone) {
+        setTimeout(() => {
+          document.getElementById('install-banner').classList.add('show');
+        }, 4000);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+/* style.css — Stili ottimizzati per iPad PWA */
+
+:root {
+  --atm-blue: #1a365d;
+  --atm-light: #2c5282;
+}
+
+/* ── Navbar — fissa in cima, non scorre ── */
+.navbar {
+  background: linear-gradient(135deg, var(--atm-blue) 0%, var(--atm-light) 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  height: 56px;
+}
+.navbar-brand img {
+  height: 40px;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+/* Compensa l'altezza della navbar fissa */
+body { padding-top: 56px; }
+
+/* ── Layout principale — occupa tutta l'altezza sotto la navbar ── */
+.container-fluid > .row {
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+/* ── Sidebar — fissa a sinistra, scorrimento interno ── */
+#sidebar {
+  height: 100%;
+  min-width: 160px;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  display: block !important;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+}
+#sidebar .nav-link {
+  color: #495057;
+  font-weight: 500;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active { background: #e2e8f0; color: var(--atm-blue); }
+
+/* ── Area principale — scorrimento verticale autonomo ── */
+#main-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── Cards / KPI ── */
+.card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  border-radius: 8px;
+}
+.kpi-card { transition: transform 0.2s; }
+.kpi-card:hover { transform: translateY(-2px); }
+
+/* ── Status badges ── */
+.status-badge { display: inline-flex; align-items: center; gap: 6px; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.status-pagato     { background: #22c55e; }
+.status-parziale   { background: #f97316; }
+.status-non_pagato { background: #ef4444; }
+
+/* ── Tabelle: intestazione fissa durante lo scroll ── */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 280px);  /* spazio per navbar + filtri */
+  overflow-y: auto;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+  box-shadow: 0 1px 0 #dee2e6;
+}
+
+/* ── Touch targets: bottoni e input almeno 44px ── */
+.btn { min-height: 38px; }
+input.form-control,
+select.form-select,
+textarea.form-control {
+  min-height: 44px;
+  font-size: 16px !important;  /* Evita zoom automatico su iOS */
+}
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  z-index: 9999;
+  min-width: 280px;
+}
+
+/* ── Nessun highlight tap su iOS ── */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ── Banner "Aggiungi a schermata Home" ── */
+#install-banner {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--atm-blue);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 9998;
+  font-size: 14px;
+  text-align: center;
+  max-width: 90vw;
+}
+#install-banner.show { display: block; }
