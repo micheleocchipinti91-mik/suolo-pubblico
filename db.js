@@ -73,7 +73,9 @@ async function searchDitte(q) {
   const lower = q.toLowerCase();
   return ditte.filter(d =>
     (d.ragioneSociale || '').toLowerCase().includes(lower) ||
-    (d.partitaIva || '').toLowerCase().includes(lower)
+    (d.nomeAttivita   || '').toLowerCase().includes(lower) ||
+    (d.intestazione   || '').toLowerCase().includes(lower) ||
+    (d.partitaIva     || '').toLowerCase().includes(lower)
   );
 }
 

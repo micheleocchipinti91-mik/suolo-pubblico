@@ -5,9 +5,15 @@
   --atm-light: #2c5282;
 }
 
-/* ── Navbar ── */
+/* ── Navbar — fissa in cima, non scorre ── */
 .navbar {
   background: linear-gradient(135deg, var(--atm-blue) 0%, var(--atm-light) 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  height: 56px;
 }
 .navbar-brand img {
   height: 40px;
@@ -15,12 +21,25 @@
   display: inline-block;
 }
 
-/* ── Sidebar — sempre visibile come nell'app Windows ── */
+/* Compensa l'altezza della navbar fissa */
+body { padding-top: 56px; }
+
+/* ── Layout principale — occupa tutta l'altezza sotto la navbar ── */
+.container-fluid > .row {
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+/* ── Sidebar — fissa a sinistra, scorrimento interno ── */
 #sidebar {
-  min-height: calc(100vh - 56px);
+  height: 100%;
+  min-width: 160px;
   background: #f8f9fa;
   border-right: 1px solid #e9ecef;
-  display: block !important;   /* sempre visibile, nessun hamburger */
+  display: block !important;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
 }
 #sidebar .nav-link {
   color: #495057;
@@ -33,6 +52,12 @@
 }
 #sidebar .nav-link:hover,
 #sidebar .nav-link.active { background: #e2e8f0; color: var(--atm-blue); }
+
+/* ── Area principale — scorrimento verticale autonomo ── */
+#main-content {
+  height: 100%;
+  overflow-y: auto;
+}
 
 /* ── Cards / KPI ── */
 .card {
@@ -50,8 +75,19 @@
 .status-parziale   { background: #f97316; }
 .status-non_pagato { background: #ef4444; }
 
-/* ── Tabelle scrollabili touch ── */
-.table-responsive { -webkit-overflow-scrolling: touch; }
+/* ── Tabelle: intestazione fissa durante lo scroll ── */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 280px);  /* spazio per navbar + filtri */
+  overflow-y: auto;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+  box-shadow: 0 1px 0 #dee2e6;
+}
 
 /* ── Touch targets: bottoni e input almeno 44px ── */
 .btn { min-height: 38px; }

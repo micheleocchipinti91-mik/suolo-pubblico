@@ -255,7 +255,11 @@ async function renderOccupazione({ anno } = {}) {
     ? `<tr><td colspan="8" class="text-center text-muted py-4">Nessuna occupazione per l'anno ${anno}</td></tr>`
     : occupazioni.map(o => `
       <tr>
-        <td><strong>${o.ditta.ragioneSociale}</strong><br><small class="text-muted">P.IVA: ${o.ditta.partitaIva}</small></td>
+        <td>
+          <strong>${o.ditta.ragioneSociale}</strong>
+          ${o.ditta.nomeAttivita ? `<br><small class="text-info">${o.ditta.nomeAttivita}</small>` : ''}
+          <br><small class="text-muted">P.IVA: ${o.ditta.partitaIva}</small>
+        </td>
         <td>${o.ditta.ubicazione || ''}, ${o.ditta.civico || ''}</td>
         <td>${o.stalli.numero}</td>
         <td><span class="badge bg-secondary">${o.stalli.settore}</span></td>
@@ -367,24 +371,26 @@ function formOccupazioneHTML(o = {}, prefix = 'add', annoDefault = ANNO_CORRENTE
     </div>` : ''}
     <div class="row g-3 mb-3">
       <div class="col-md-6"><label class="form-label">Ragione Sociale *</label>
-        <input type="text" class="form-control" id="${prefix}_ragioneSociale" value="${d.ragioneSociale || ''}" required></div>
+        <input type="text" class="form-control" id="${prefix}_ragioneSociale" value="${d.ragioneSociale || ''}"></div>
       <div class="col-md-3"><label class="form-label">P.IVA *</label>
-        <input type="text" class="form-control" id="${prefix}_partitaIva" value="${d.partitaIva || ''}" required></div>
+        <input type="text" class="form-control" id="${prefix}_partitaIva" value="${d.partitaIva || ''}"></div>
       <div class="col-md-3"><label class="form-label">Codice Univoco</label>
         <input type="text" class="form-control" id="${prefix}_codiceUnivoco" value="${d.codiceUnivoco || ''}"></div>
+      <div class="col-md-6"><label class="form-label">Nome Attività</label>
+        <input type="text" class="form-control" id="${prefix}_nomeAttivita" value="${d.nomeAttivita || ''}" placeholder="Nome commerciale / attività"></div>
       <div class="col-md-4"><label class="form-label">Intestazione</label>
         <input type="text" class="form-control" id="${prefix}_intestazione" value="${d.intestazione || ''}"></div>
       <div class="col-md-4"><label class="form-label">Ubicazione *</label>
-        <input type="text" class="form-control" id="${prefix}_ubicazione" value="${d.ubicazione || ''}" required></div>
+        <input type="text" class="form-control" id="${prefix}_ubicazione" value="${d.ubicazione || ''}"></div>
       <div class="col-md-2"><label class="form-label">Civico *</label>
-        <input type="text" class="form-control" id="${prefix}_civico" value="${d.civico || ''}" required></div>
+        <input type="text" class="form-control" id="${prefix}_civico" value="${d.civico || ''}"></div>
       <div class="col-md-2"><label class="form-label">Telefono</label>
         <input type="text" class="form-control" id="${prefix}_telefono" value="${d.telefono || ''}"></div>
     </div>
     <h6 class="fw-bold text-primary mb-3">Stalli</h6>
     <div class="row g-3 mb-3">
       <div class="col-md-3"><label class="form-label">Numero Stalli *</label>
-        <input type="number" class="form-control" id="${prefix}_numeroStalli" value="${st.numero || ''}" required></div>
+        <input type="number" class="form-control" id="${prefix}_numeroStalli" value="${st.numero || ''}"></div>
       <div class="col-md-3"><label class="form-label">Settore *</label>
         <select class="form-select" id="${prefix}_settore" onchange="updateTariffazione(this,'${prefix}')">
           <option value="C" ${st.settore === 'C' ? 'selected' : ''}>C</option>
@@ -456,6 +462,7 @@ function leggiOccupazioneDaForm(prefix, anno) {
       ragioneSociale: val(prefix + '_ragioneSociale'),
       partitaIva:     val(prefix + '_partitaIva'),
       codiceUnivoco:  val(prefix + '_codiceUnivoco'),
+      nomeAttivita:   val(prefix + '_nomeAttivita'),
       intestazione:   val(prefix + '_intestazione'),
       ubicazione:     val(prefix + '_ubicazione'),
       civico:         val(prefix + '_civico'),
@@ -550,7 +557,7 @@ window.cercaDitte = async function() {
 window.fillDittaForm = function(id) {
   const d = (window._ditteCache || []).find(x => x.id === id);
   if (!d) return;
-  ['ragioneSociale','partitaIva','codiceUnivoco','intestazione','ubicazione','civico','telefono'].forEach(k => {
+  ['ragioneSociale','partitaIva','codiceUnivoco','nomeAttivita','intestazione','ubicazione','civico','telefono'].forEach(k => {
     const e = el('add_' + k);
     if (e) e.value = d[k] || '';
   });
@@ -565,7 +572,14 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
   const anni = await getAnniConCorrente();
   let occupazioni = await DB.getOccupazioniByAnno(anno);
 
-  if (search)       occupazioni = occupazioni.filter(o => (o.ditta.ragioneSociale || '').toLowerCase().includes(search.toLowerCase()));
+  if (search) {
+    const q = search.toLowerCase();
+    occupazioni = occupazioni.filter(o =>
+      (o.ditta.ragioneSociale || '').toLowerCase().includes(q) ||
+      (o.ditta.nomeAttivita   || '').toLowerCase().includes(q) ||
+      (o.ditta.intestazione   || '').toLowerCase().includes(q)
+    );
+  }
   if (settore)      occupazioni = occupazioni.filter(o => o.stalli.settore === settore);
   if (periodo === 'annuale')    occupazioni = occupazioni.filter(o => o.periodo.annuale);
   if (periodo === 'stagionale') occupazioni = occupazioni.filter(o => o.periodo.stagionale);
@@ -598,20 +612,17 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
         <select class="form-select form-select-sm" style="width:120px;" onchange="navigate('/riepilogo',{anno:this.value})">
           ${annoSelectHTML(anni, anno)}
         </select>
-        <button class="btn btn-danger btn-sm" onclick="esportaPDF(${anno})">
-          <i class="bi bi-file-pdf"></i> Esporta PDF
-        </button>
-      </div>
+    </div>
     </div>
     <div class="card mb-4">
       <div class="card-header"><h6 class="mb-0">Filtri Avanzati</h6></div>
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">Ragione Sociale</label>
-            <input type="text" class="form-control" id="f_search" placeholder="Cerca..." value="${search || ''}">
+          <div class="col-12 col-md-4">
+            <label class="form-label">Ditta / Nome Attività</label>
+            <input type="text" class="form-control" id="f_search" placeholder="Cerca per ragione sociale o nome attività..." value="${search || ''}">
           </div>
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <label class="form-label">Settore</label>
             <select class="form-select" id="f_settore">
               <option value="">Tutti</option>
@@ -619,7 +630,7 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
               <option value="F" ${settore === 'F' ? 'selected' : ''}>F</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <label class="form-label">Periodo</label>
             <select class="form-select" id="f_periodo">
               <option value="">Tutti</option>
@@ -627,7 +638,7 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
               <option value="stagionale" ${periodo === 'stagionale' ? 'selected' : ''}>Stagionale</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <label class="form-label">Pagamento</label>
             <select class="form-select" id="f_pagamento">
               <option value="">Tutti</option>
@@ -636,7 +647,7 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
               <option value="non_pagato" ${pagamento === 'non_pagato' ? 'selected' : ''}>Non Pagato</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <label class="form-label">Tariffazione</label>
             <select class="form-select" id="f_tariffazione">
               <option value="">Tutti</option>
@@ -647,8 +658,10 @@ async function renderRiepilogo({ anno, search, settore, periodo, pagamento, tari
               <option value="Rossa Ann" ${tariffazione === 'Rossa Ann' ? 'selected' : ''}>Rossa Annuale</option>
             </select>
           </div>
-          <div class="col-md-1 d-flex align-items-end">
-            <button class="btn btn-primary w-100" onclick="applicaFiltriRiepilogo(${anno})">Filtra</button>
+          <div class="col-12 col-md-auto d-flex align-items-end">
+            <button class="btn btn-primary" onclick="applicaFiltriRiepilogo(${anno})">
+              <i class="bi bi-search me-1"></i>Filtra
+            </button>
           </div>
         </div>
       </div>
@@ -697,10 +710,11 @@ async function renderAnagrafica() {
   const ditte = await DB.getDitte();
 
   const righe = ditte.length === 0
-    ? `<tr><td colspan="7" class="text-center text-muted py-4">Nessuna ditta in archivio</td></tr>`
+    ? `<tr><td colspan="8" class="text-center text-muted py-4">Nessuna ditta in archivio</td></tr>`
     : ditte.map(d => `
       <tr>
         <td><strong>${d.ragioneSociale}</strong></td>
+        <td>${d.nomeAttivita || '-'}</td>
         <td>${d.partitaIva}</td>
         <td>${d.codiceUnivoco || '-'}</td>
         <td>${d.intestazione || '-'}</td>
@@ -724,7 +738,7 @@ async function renderAnagrafica() {
         <div class="table-responsive">
           <table class="table table-hover mb-0">
             <thead class="table-light">
-              <tr><th>Ragione Sociale</th><th>P.IVA</th><th>Cod. Univoco</th><th>Intestazione</th><th>Ubicazione</th><th>Telefono</th><th>Azioni</th></tr>
+              <tr><th>Ragione Sociale</th><th>Nome Attività</th><th>P.IVA</th><th>Cod. Univoco</th><th>Intestazione</th><th>Ubicazione</th><th>Telefono</th><th>Azioni</th></tr>
             </thead>
             <tbody>${righe}</tbody>
           </table>
@@ -784,6 +798,8 @@ function formDittaHTML(prefix, d = {}) {
         <input type="text" class="form-control" id="${prefix}_partitaIva" value="${d.partitaIva || ''}" required></div>
       <div class="col-md-3"><label class="form-label">Codice Univoco</label>
         <input type="text" class="form-control" id="${prefix}_codiceUnivoco" value="${d.codiceUnivoco || ''}"></div>
+      <div class="col-md-6"><label class="form-label">Nome Attività</label>
+        <input type="text" class="form-control" id="${prefix}_nomeAttivita" value="${d.nomeAttivita || ''}" placeholder="Nome commerciale / attività"></div>
       <div class="col-md-6"><label class="form-label">Intestazione</label>
         <input type="text" class="form-control" id="${prefix}_intestazione" value="${d.intestazione || ''}"></div>
       <div class="col-md-4"><label class="form-label">Ubicazione *</label>
@@ -801,6 +817,7 @@ function leggiDittaDaForm(prefix) {
     ragioneSociale: val(prefix + '_ragioneSociale'),
     partitaIva:     val(prefix + '_partitaIva'),
     codiceUnivoco:  val(prefix + '_codiceUnivoco'),
+    nomeAttivita:   val(prefix + '_nomeAttivita'),
     intestazione:   val(prefix + '_intestazione'),
     ubicazione:     val(prefix + '_ubicazione'),
     civico:         val(prefix + '_civico'),
@@ -886,19 +903,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Import file handler
   const importInput = el('importFileInput');
   if (importInput) {
-    importInput.addEventListener('change', e => {
-      const f = e.target.files[0];
-      if (f) importaDati(f);
-    });
-  }
-
-  // Routing iniziale
-  // Su GitHub Pages il pathname è tipo /repo-name/ oppure /repo-name/index.html
-  // Estraiamo solo la parte di "vista" (/, /occupazione, ecc.) dai params se presenti
-  const params = Object.fromEntries(new URLSearchParams(window.location.search));
-  const routePath = params._route || '/';
-  delete params._route;
-  renderView(routePath, params);
-});
-
-window.navigate = navigate;
+    
