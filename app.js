@@ -1,6 +1,7 @@
 // app.js — SPA routing e logica viste per Gestione Suolo Pubblico PWA
 
 const ANNO_CORRENTE = new Date().getFullYear();
+const APP_VERSION = '2.0';
 
 // ─── ROUTER ──────────────────────────────────────────────────────────────────
 
@@ -165,7 +166,7 @@ async function renderDashboard(params) {
 
   main().innerHTML = ''
     + '<div class="d-flex justify-content-between align-items-center mb-4">'
-    + '  <h2 class="mb-0">Dashboard</h2>'
+    + '  <h2 class="mb-0">Dashboard <small class="text-muted fs-6">v' + APP_VERSION + '</small></h2>'
     + '  <div class="d-flex align-items-center gap-3">'
     + '    <label class="mb-0 fw-semibold">Anno:</label>'
     + '    <select class="form-select form-select-sm" style="width:120px;" onchange="navigate(\'/\',{anno:this.value})">'
