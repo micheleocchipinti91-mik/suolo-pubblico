@@ -235,11 +235,16 @@ async function renderOccupazione(params) {
     : occupazioni.map(function(o) {
         return '<tr>'
           + '<td>'
-          + '<strong>' + (o.ditta.intestazione || o.ditta.ragioneSociale || '-') + '</strong>'
-          + '<br>' + (o.ditta.ragioneSociale || '')
-          + '<br><small class="text-muted">P.IVA: ' + (o.ditta.partitaIva || '') + '</small>'
+          + (function(d){
+              var int_ = d.intestazione || '';
+              var rs   = d.ragioneSociale || '';
+              var piva = d.partitaIva || '';
+              return '<strong>' + (int_ || rs || '-') + '</strong>'
+                + (int_ && rs ? '<br>' + rs : '')
+                + '<br><small class="text-muted">P.IVA: ' + piva + '</small>';
+            })(o.ditta || {})
           + '</td>'
-          + '<td>' + (o.ditta.ubicazione || '') + ', ' + (o.ditta.civico || '') + '</td>'
+          + '<td>' + ((o.ditta || {}).ubicazione || '') + ', ' + ((o.ditta || {}).civico || '') + '</td>'
           + '<td>' + o.stalli.numero + '</td>'
           + '<td><span class="badge bg-secondary">' + o.stalli.settore + '</span></td>'
           + '<td>' + o.stalli.tariffazione + '</td>'
@@ -685,7 +690,6 @@ async function renderAnagrafica(params) {
     : ditte.map(function(d) {
         return '<tr>'
           + '<td><strong>' + (d.ragioneSociale || '') + '</strong></td>'
-          + '<td>' + (d.nomeAttivita || '-') + '</td>'
           + '<td>' + (d.partitaIva || '') + '</td>'
           + '<td>' + (d.codiceUnivoco || '-') + '</td>'
           + '<td>' + (d.intestazione || '-') + '</td>'
@@ -715,7 +719,7 @@ async function renderAnagrafica(params) {
     + '<div class="card"><div class="card-body p-0"><div class="table-responsive">'
     + '<table class="table table-hover mb-0">'
     + '<thead class="table-light"><tr>'
-    + '<th>Ragione Sociale</th><th>Nome Attivita</th><th>P.IVA</th><th>Cod. Univoco</th>'
+    + '<th>Ragione Sociale</th><th>P.IVA</th><th>Cod. Univoco</th>'
     + '<th>Intestazione</th><th>Ubicazione</th><th>Telefono</th><th>Azioni</th>'
     + '</tr></thead>'
     + '<tbody>' + righe + '</tbody>'
