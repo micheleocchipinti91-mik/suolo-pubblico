@@ -729,7 +729,7 @@ async function renderAnagrafica(params) {
     + searchBtn
     + '</div></div>'
     + '<div class="col-auto"><label class="me-1 fw-semibold">Stato:</label>'
-    + '<select class="form-select form-select-sm d-inline-block" style="width:140px;" onchange="renderAnagrafica({search:\'' + search.replace(/\'/g,\'\\\'\'') + '\', stato:this.value})">'
+    + '<select class="form-select form-select-sm d-inline-block" style="width:140px;" onchange="renderAnagrafica({search:\'' + search.replace(/'/g, "\\'") + '\', stato:this.value})">'
     + '<option value="in_attivita"' + (stato === 'in_attivita' ? ' selected' : '') + '>In attività</option>'
     + '<option value="tutte"'      + (stato === 'tutte'       ? ' selected' : '') + '>Tutte</option>'
     + '<option value="cessata"'    + (stato === 'cessata'     ? ' selected' : '') + '>Cessata</option>'
