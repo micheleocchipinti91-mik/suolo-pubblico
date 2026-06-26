@@ -281,7 +281,7 @@ async function renderOccupazione(params) {
     + '  <div class="card-header d-flex justify-content-between align-items-center">'
     + '    <span>Elenco Occupazioni' + countNote + '</span>'
     + '    <button class="btn btn-primary btn-sm" onclick="apriAggiuntaOccupazione(' + anno + ')">'
-    + '      <i class="bi bi-plus-circle"></i> Aggiungi'
+    + '      <i class="bi bi-plus-circle"></i> Aggiungi suolo pubblico'
     + '    </button>'
     + '  </div>'
     + '  <div class="card-body p-0">'
@@ -513,6 +513,7 @@ window.cercaDitte = async function() {
   var res = el('searchDitteResults');
   if (q.length < 2) { res.innerHTML = ''; return; }
   var ditte = await DB.searchDitte(q);
+  ditte = ditte.filter(function(d) { return (d.stato || 'in_attivita') !== 'cessata'; });
   if (ditte.length === 0) { res.innerHTML = '<small class="text-muted">Nessuna ditta trovata</small>'; return; }
   res.innerHTML = ditte.map(function(d) {
     return '<div class="p-2 border-bottom" style="cursor:pointer;" onclick="fillDittaForm(\'' + d.id + '\')">'
@@ -671,7 +672,13 @@ window.toggleAvvisi = function(id) {
 async function renderAnagrafica(params) {
   params = params || {};
   var search = params.search || '';
+  var stato  = params.stato  || 'in_attivita';
   var ditte  = await DB.getDitte();
+
+  // filtro stato
+  if (stato !== 'tutte') {
+    ditte = ditte.filter(function(d) { return (d.stato || 'in_attivita') === stato; });
+  }
 
   if (search) {
     var q = search.toLowerCase();
@@ -689,8 +696,11 @@ async function renderAnagrafica(params) {
   var righe = ditte.length === 0
     ? '<tr><td colspan="8" class="text-center text-muted py-4">Nessuna ditta in archivio</td></tr>'
     : ditte.map(function(d) {
-        return '<tr>'
-          + '<td><strong>' + (d.ragioneSociale || '') + '</strong></td>'
+        var isCessata = d.stato === 'cessata';
+        var rowStyle = isCessata ? ' style="color:#aaa;"' : '';
+        var badge = isCessata ? ' <span class="badge bg-secondary ms-1" style="font-size:.7rem;">Cessata</span>' : '';
+        return '<tr' + rowStyle + '>'
+          + '<td><strong>' + (d.ragioneSociale || '') + '</strong>' + badge + '</td>'
           + '<td>' + (d.partitaIva || '') + '</td>'
           + '<td>' + (d.codiceUnivoco || '-') + '</td>'
           + '<td>' + (d.intestazione || '-') + '</td>'
@@ -709,13 +719,21 @@ async function renderAnagrafica(params) {
     + '    <i class="bi bi-plus-circle"></i> Aggiungi Ditta'
     + '  </button>'
     + '</div>'
-    + '<div class="mb-3"><div class="input-group">'
+    + '<div class="mb-3"><div class="row g-2 align-items-center">'
+    + '<div class="col"><div class="input-group">'
     + '<span class="input-group-text"><i class="bi bi-search"></i></span>'
     + '<input type="text" class="form-control" id="ana_search"'
     + '       placeholder="Cerca per ragione sociale, intestazione, nome attivita..."'
     + '       value="' + search + '"'
-    + '       oninput="renderAnagrafica({search:this.value})">'
+    + '       oninput="renderAnagrafica({search:this.value, stato:\'' + stato + '\'})">'  
     + searchBtn
+    + '</div></div>'
+    + '<div class="col-auto"><label class="me-1 fw-semibold">Stato:</label>'
+    + '<select class="form-select form-select-sm d-inline-block" style="width:140px;" onchange="renderAnagrafica({search:\'' + search.replace(/\'/g,\'\\\'\'') + '\', stato:this.value})">'
+    + '<option value="in_attivita"' + (stato === 'in_attivita' ? ' selected' : '') + '>In attività</option>'
+    + '<option value="tutte"'      + (stato === 'tutte'       ? ' selected' : '') + '>Tutte</option>'
+    + '<option value="cessata"'    + (stato === 'cessata'     ? ' selected' : '') + '>Cessata</option>'
+    + '</select></div>'
     + '</div></div>'
     + '<div class="card"><div class="card-body p-0"><div class="table-responsive">'
     + '<table class="table table-hover mb-0">'
@@ -765,6 +783,12 @@ function formDittaHTML(prefix, d) {
     + '<input type="text" class="form-control" id="' + prefix + '_codiceUnivoco" value="' + (d.codiceUnivoco || '') + '"></div>'
     + '<div class="col-md-6"><label class="form-label">Nome Attivita</label>'
     + '<input type="text" class="form-control" id="' + prefix + '_nomeAttivita" value="' + (d.nomeAttivita || '') + '" placeholder="Nome commerciale / attivita"></div>'
+    + '<div class="col-12"><label class="form-label fw-semibold">Stato attività</label><br>'
+    + '<input type="radio" class="btn-check" name="' + prefix + '_stato" id="' + prefix + '_stato_attiva" value="in_attivita"' + ((!d.stato || d.stato === 'in_attivita') ? ' checked' : '') + '>'
+    + '<label class="btn btn-outline-success btn-sm me-2" for="' + prefix + '_stato_attiva">In attività</label>'
+    + '<input type="radio" class="btn-check" name="' + prefix + '_stato" id="' + prefix + '_stato_cessata" value="cessata"' + (d.stato === 'cessata' ? ' checked' : '') + '>'
+    + '<label class="btn btn-outline-secondary btn-sm" for="' + prefix + '_stato_cessata">Cessata</label>'
+    + '</div>'
     + '<div class="col-md-6"><label class="form-label">Intestazione</label>'
     + '<input type="text" class="form-control" id="' + prefix + '_intestazione" value="' + (d.intestazione || '') + '"></div>'
     + '<div class="col-md-4"><label class="form-label">Ubicazione *</label>'
@@ -778,6 +802,10 @@ function formDittaHTML(prefix, d) {
 
 function leggiDittaDaForm(prefix) {
   function val(id) { var e = el(id); return e ? e.value.trim() : ''; }
+  function radio2(name) {
+    var r2 = document.querySelector('input[name="' + name + '"]:checked');
+    return r2 ? r2.value : 'in_attivita';
+  }
   return {
     ragioneSociale: val(prefix + '_ragioneSociale'),
     partitaIva:     val(prefix + '_partitaIva'),
@@ -786,7 +814,8 @@ function leggiDittaDaForm(prefix) {
     intestazione:   val(prefix + '_intestazione'),
     ubicazione:     val(prefix + '_ubicazione'),
     civico:         val(prefix + '_civico'),
-    telefono:       val(prefix + '_telefono')
+    telefono:       val(prefix + '_telefono'),
+    stato:          radio2(prefix + '_stato')
   };
 }
 
